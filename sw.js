@@ -1,16 +1,20 @@
 /* 日本一周クエスト サービスワーカー
    ゲーム本体と問題データを端末に保存し、通信がなくても遊べるようにする。
    ファイルを更新したら CACHE の数字を必ず上げること（古い版が残るのを防ぐため）。 */
-const CACHE = "nihon-isshu-quest-v1";
+const CACHE = "nihon-isshu-quest-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./questions.js",
   "./manifest.webmanifest",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png",
-  "./icons/favicon-32.png"
+  "./icons/icon-192-v2.png",
+  "./icons/icon-512-v2.png",
+  "./icons/icon-512-maskable-v2.png",
+  "./icons/apple-touch-icon-v2.png",
+  "./icons/apple-touch-icon-167-v2.png",
+  "./icons/apple-touch-icon-152-v2.png",
+  "./icons/favicon-32-v2.png",
+  "./icons/favicon.ico"
 ];
 
 self.addEventListener("install", e => {
