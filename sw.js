@@ -1,7 +1,8 @@
-/* 日本一周クエスト サービスワーカー
-   ゲーム本体と問題データを端末に保存し、通信がなくても遊べるようにする。
-   ファイルを更新したら CACHE の数字を必ず上げること（古い版が残るのを防ぐため）。 */
-const CACHE = "nihon-isshu-quest-v2";
+/* 日本一周クエスト サービスワーカー v3
+   方針を変更：本体（HTML・JS）は「通信を先に試し、だめなら保存済みを使う」方式にした。
+   これによりファイルを更新すれば、次に開いたときに必ず新しい版が表示される。
+   通信がないときだけ保存済みで動くので、オフラインで遊べる点は変わらない。 */
+const CACHE = "nihon-isshu-quest-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -14,15 +15,18 @@ const ASSETS = [
   "./icons/apple-touch-icon-167-v2.png",
   "./icons/apple-touch-icon-152-v2.png",
   "./icons/favicon-32-v2.png",
-  "./icons/favicon.ico"
+  "./icons/favicon.ico",
+  "./favicon.ico",
+  "./apple-touch-icon.png",
+  "./apple-touch-icon-precomposed.png"
 ];
 
 self.addEventListener("install", e => {
   e.waitUntil(
     caches.open(CACHE)
       .then(c => c.addAll(ASSETS))
+      .catch(() => {})
       .then(() => self.skipWaiting())
-      .catch(() => self.skipWaiting())
   );
 });
 
@@ -34,29 +38,40 @@ self.addEventListener("activate", e => {
   );
 });
 
+/* 画面から「全部消して入れ直す」と指示されたとき */
+self.addEventListener("message", e => {
+  if (e.data === "clear-all") {
+    caches.keys()
+      .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.registration.unregister())
+      .then(() => self.clients.matchAll())
+      .then(cs => cs.forEach(c => c.navigate(c.url)));
+  }
+});
+
+function fresh(req) {
+  return fetch(req).then(res => {
+    const copy = res.clone();
+    caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+    return res;
+  });
+}
+
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  const sameSite = url.origin === self.location.origin;
 
-  /* 地図データとフォントは、通信できたら取りに行き、次回のために保存しておく */
-  if (req.url.indexOf("githubusercontent") > -1 || req.url.indexOf("jsdelivr") > -1 ||
-      req.url.indexOf("fonts.g") > -1) {
+  /* 画面そのもの・本体のコード・設定ファイルは、まず最新を取りに行く */
+  if (req.mode === "navigate" ||
+      (sameSite && /\.(html|js|webmanifest|json)$/.test(url.pathname))) {
     e.respondWith(
-      fetch(req).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match(req))
+      fresh(req).catch(() => caches.match(req).then(hit => hit || caches.match("./index.html")))
     );
     return;
   }
 
-  /* ゲーム本体は保存済みを優先して即座に表示する */
-  e.respondWith(
-    caches.match(req).then(hit => hit || fetch(req).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
-      return res;
-    }))
-  );
+  /* 画像・フォント・地図データは保存済みを優先して素早く表示する */
+  e.respondWith(caches.match(req).then(hit => hit || fresh(req).catch(() => hit)));
 });

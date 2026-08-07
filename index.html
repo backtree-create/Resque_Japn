@@ -11,11 +11,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="日本一周クエスト">
-<link rel="icon" href="icons/favicon.ico?v=2" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-v2.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-v2.png">
-<link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167-v2.png">
-<link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152-v2.png">
+<link rel="icon" href="favicon.ico?v=3" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-v2.png?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
+<link rel="apple-touch-icon-precomposed" sizes="180x180" href="apple-touch-icon-precomposed.png?v=3">
+<link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167-v2.png?v=3">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152-v2.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
@@ -206,8 +207,10 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
     <button class="btn ghost sm" id="fsBtn">全画面</button>
     <button class="btn ghost sm" id="sndBtn">音 ♪ ON</button>
   </div>
+  <p class="note" style="margin:14px 0 0;font-size:11px">版 v4　—　この表示が変わらないときは更新が届いていません</p>
   <div class="btnrow">
     <button class="btn ghost sm" id="zukanBtn">モンスター図鑑</button>
+    <button class="btn ghost sm" id="updBtn">更新を確認</button>
     <button class="btn ghost sm" id="resetBtn">記録を消す</button>
   </div>
 </section>
@@ -1155,6 +1158,21 @@ function fs(){
 }
 document.getElementById("fsBtn").addEventListener("click",fs);
 document.getElementById("mFs").addEventListener("click",fs);
+document.getElementById("updBtn").addEventListener("click",async()=>{
+ const b=document.getElementById("updBtn");
+ b.textContent="更新中…";
+ try{
+   if(window.caches){
+     const keys=await caches.keys();
+     await Promise.all(keys.map(k=>caches.delete(k)));
+   }
+   if(navigator.serviceWorker){
+     const rs=await navigator.serviceWorker.getRegistrations();
+     await Promise.all(rs.map(r=>r.unregister()));
+   }
+ }catch(e){}
+ location.replace(location.pathname+"?fresh="+Date.now());
+});
 document.getElementById("resetBtn").addEventListener("click",async()=>{
  save={cleared:[],best:{},dark:[],tokyo:false,darkTokyo:false,wrong:[]}; MODE="light"; await persist(); drawMap();
  document.getElementById("resetBtn").textContent="記録を消しました";

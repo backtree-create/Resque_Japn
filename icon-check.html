@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アイコン点検</title>
+<style>
+body{background:#0b1020;color:#f3ede0;font-family:sans-serif;padding:16px;line-height:1.8}
+h1{font-size:18px;color:#d8a94a;margin:0 0 4px}
+p{font-size:13px;color:#9fb0d0;margin:0 0 16px}
+.row{display:flex;align-items:center;gap:14px;border-bottom:1px solid #2b3a58;padding:10px 0}
+img{image-rendering:pixelated;background:#000;border:1px solid #2b3a58}
+.name{font-size:12px;word-break:break-all}
+.state{font-size:12px;margin-left:auto;white-space:nowrap}
+.ok{color:#5fbf8f}.ng{color:#f08b7a}
+button{font:inherit;font-size:14px;padding:10px 16px;margin-top:16px;background:#1d3a6b;
+ color:#f3ede0;border:2px solid #d8a94a;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>アイコン点検</h1>
+<p>サーバーに置かれている実物を、保存済みを使わずに直接読み込んで表示します。
+ここに新しい絵が出れば、ファイルは正しく置かれています。出ない・欠落と出る場合は、
+アップロードができていません。</p>
+<div id="list"></div>
+<button id="clear">この端末の保存データを全部消して開き直す</button>
+<script>
+var FILES=["favicon.ico","apple-touch-icon.png","apple-touch-icon-precomposed.png",
+ "icons/icon-512-v2.png","icons/icon-192-v2.png","icons/apple-touch-icon-v2.png",
+ "icons/apple-touch-icon-167-v2.png","icons/apple-touch-icon-152-v2.png",
+ "icons/favicon-32-v2.png","icons/icon-512-maskable-v2.png","icons/favicon.ico"];
+var bust="?nocache="+Date.now();
+var list=document.getElementById("list");
+FILES.forEach(function(f){
+  var row=document.createElement("div");row.className="row";
+  var img=document.createElement("img");
+  img.width=64;img.height=64;img.src=f+bust;img.alt=f;
+  var name=document.createElement("div");name.className="name";name.textContent=f;
+  var st=document.createElement("div");st.className="state";st.textContent="読み込み中…";
+  img.onload=function(){st.className="state ok";st.textContent="OK "+img.naturalWidth+"px";};
+  img.onerror=function(){st.className="state ng";st.textContent="欠落（404）";};
+  row.appendChild(img);row.appendChild(name);row.appendChild(st);list.appendChild(row);
+});
+document.getElementById("clear").onclick=function(){
+  var done=function(){ location.replace("./index.html?fresh="+Date.now()); };
+  if(window.caches){ caches.keys().then(function(k){ return Promise.all(k.map(function(x){return caches.delete(x);})); }); }
+  if(navigator.serviceWorker){
+    navigator.serviceWorker.getRegistrations().then(function(rs){
+      return Promise.all(rs.map(function(r){return r.unregister();}));
+    }).then(done);
+  } else done();
+};
+</script>
+</body>
+</html>
