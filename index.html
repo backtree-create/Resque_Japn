@@ -207,7 +207,7 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
     <button class="btn ghost sm" id="fsBtn">全画面</button>
     <button class="btn ghost sm" id="sndBtn">音 ♪ ON</button>
   </div>
-  <p class="note" style="margin:14px 0 0;font-size:11px">版 v4　—　この表示が変わらないときは更新が届いていません</p>
+  <p class="note" style="margin:14px 0 0;font-size:11px">版 v5　—　この表示が変わらないときは更新が届いていません</p>
   <div class="btnrow">
     <button class="btn ghost sm" id="zukanBtn">モンスター図鑑</button>
     <button class="btn ghost sm" id="updBtn">更新を確認</button>
@@ -536,7 +536,11 @@ async function persist(){
 
 /* ============ 音 ============ */
 let AC=null,bgmTimer=null;
-function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return AC; }
+function ac(){
+ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} }
+ if(AC&&AC.state==="suspended"){ AC.resume().catch(()=>{}); }
+ return AC;
+}
 function tone(f,dur,type,vol,delay){
  if(!soundOn) return; const c=ac(); if(!c) return;
  const t=c.currentTime+(delay||0);
@@ -575,8 +579,18 @@ function bgm(name){
 function stopBgm(){ if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null;} }
 function toggleSound(){
  soundOn=!soundOn;
- document.querySelectorAll("#sndBtn").forEach(b=>b.textContent="音 ♪ "+(soundOn?"ON":"OFF"));
- if(!soundOn) stopBgm(); else if(cur==="map") bgm("map");
+ const b=document.getElementById("sndBtn");
+ if(b) b.textContent="音 ♪ "+(soundOn?"ON":"OFF");
+ ["mSnd","bSnd"].forEach(id=>{
+   const e=document.getElementById(id); if(e) e.textContent=soundOn?"♪":"♪×";
+ });
+ if(!soundOn){ stopBgm(); return; }
+ ac();                                   /* ボタン押下の中で音源を起動（iPad対策） */
+ if(cur==="map") bgm("map");
+ else if(cur==="battle"&&S&&!S.review){
+   const e=S.enemies&&S.enemies[S.ei];
+   bgm(e&&e.boss?"boss":"battle");
+ }
 }
 
 /* ============ 画面切替 ============ */
